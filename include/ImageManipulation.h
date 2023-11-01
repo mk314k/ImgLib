@@ -1,5 +1,5 @@
-#ifndef __BASICIMAGEMANIPULATION__H
-#define __BASICIMAGEMANIPULATION__H
+#ifndef __IMAGEMANIPULATION__H
+#define __IMAGEMANIPULATION__H
 
 #include "Image.h"
 #include <cmath>
@@ -7,8 +7,6 @@
 
 using namespace std;
 
-// Special image
-Image create_special();
 
 // Brightness and contrast
 Image brightness(const Image &im, float factor);
@@ -44,7 +42,6 @@ std::vector<Image> spanish(const Image &im);
 // White Balance
 Image grayworld(const Image &in);
 
-// --------- HANDOUT PS05 ------------------------------
 Image scaleNN(const Image &im, float factor);
 float interpolateLin(const Image &im, float x, float y, int z,
                      bool clamp = false);
@@ -52,6 +49,5 @@ Image scaleLin(const Image &im, float factor);
 Image scaleBicubic(const Image &im, float factor, float B, float C);
 Image scaleLanczos(const Image &im, float factor, float a);
 Image rotate(const Image &im, float theta);
-// ------------------------------------------------------
 
 #endif

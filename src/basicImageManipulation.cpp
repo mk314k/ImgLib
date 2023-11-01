@@ -1,18 +1,10 @@
-
-
-#include "basicImageManipulation.h"
+#include "../include/ImageManipulation.h"
 using namespace std;
 
-// --------- HANDOUT PS05 ------------------------------
-// -----------------------------------------------------
-//
 Image scaleNN(const Image &im, float factor) {
-  // --------- HANDOUT  PS05 ------------------------------
   // create a new image that is factor times bigger than the input by using
   // nearest neighbor interpolation.
   // return im;
-
-  // --------- SOLUTION PS05 ------------------------------
   int ys, xs; // coordinate in the source image
 
   // Initialize a new Image factor times bigger (or smaller if factor <1)
@@ -29,14 +21,13 @@ Image scaleNN(const Image &im, float factor) {
         // bigger...
         ys = round(1 / factor * y);
         xs = round(1 / factor * x);
-        out(x, y, z) = im.smartAccessor(xs, ys, z, true);
+        out(x, y, z) = im.get(xs, ys, z, true);
       }
 
   return out;
 }
 
 float interpolateLin(const Image &im, float x, float y, int z, bool clamp) {
-  // --------- HANDOUT  PS05 ------------------------------
   // bilinear interpolation samples the value of a non-integral
   // position (x,y) from its four "on-grid" neighboring pixels.
   //  |           |
@@ -51,8 +42,6 @@ float interpolateLin(const Image &im, float x, float y, int z, bool clamp) {
   //                   information with * ! Of course, the pixel
   //                   closest to * should influence it more.
   // return 0.0f;
-
-  // --------- SOLUTION PS05 ------------------------------
   // get the neighboring points
   int xf = floor(x); // floor
   int yf = floor(y);
@@ -64,10 +53,10 @@ float interpolateLin(const Image &im, float x, float y, int z, bool clamp) {
   float xalpha = x - xf;
 
   // obtain the values at those points
-  float tl = im.smartAccessor(xf, yf, z, clamp); // top-left
-  float tr = im.smartAccessor(xc, yf, z, clamp); // ...
-  float bl = im.smartAccessor(xf, yc, z, clamp);
-  float br = im.smartAccessor(xc, yc, z, clamp);
+  float tl = im.get(xf, yf, z, clamp); // top-left
+  float tr = im.get(xc, yf, z, clamp); // ...
+  float bl = im.get(xf, yc, z, clamp);
+  float br = im.get(xc, yc, z, clamp);
 
   // compute the interpolations on the top and bottom
   float topL = tr * xalpha + tl * (1.0f - xalpha);
@@ -81,12 +70,9 @@ float interpolateLin(const Image &im, float x, float y, int z, bool clamp) {
 }
 
 Image scaleLin(const Image &im, float factor) {
-  // --------- HANDOUT  PS05 ------------------------------
   // create a new image that is factor times bigger than the input by using
   // bilinear interpolation
   // return im;
-
-  // --------- SOLUTION PS05 ------------------------------
   float ys, xs; // coordinate in the source image
 
   // Initialize a new Image factor times bigger (or smaller if factor <1)
@@ -109,12 +95,10 @@ Image scaleLin(const Image &im, float factor) {
 }
 
 Image scaleBicubic(const Image &im, float factor, float B, float C) {
-  // --------- HANDOUT  PS05 ------------------------------
   // create a new image that is factor times bigger than the input by using
   // a bicubic filter kernel with Mitchell and Netravali's parametrization
   // see "Reconstruction filters in computer graphics", Mitchell and Netravali
   // 1988 or http://entropymine.com/imageworsener/bicubic/
-  // return im;
 
   // precompute coefficients
   float A3 = 2 - 1.5f * B - C;
@@ -158,7 +142,7 @@ Image scaleBicubic(const Image &im, float factor, float B, float C) {
         for (int xs = xstart; xs <= xend; ++xs) {
           float w = computeK(xsrc - xs) * computeK(ysrc - ys);
           for (int z = 0; z < im.channels(); z++)
-            out(x, y, z) += im.smartAccessor(xs, ys, z, false) * w;
+            out(x, y, z) += im.get(xs, ys, z, false) * w;
         }
     }
 
@@ -166,10 +150,8 @@ Image scaleBicubic(const Image &im, float factor, float B, float C) {
 }
 
 Image scaleLanczos(const Image &im, float factor, float a) {
-  // --------- HANDOUT  PS05 ------------------------------
   // create a new image that is factor times bigger than the input by using
   // a Lanczos filter kernel
-  // return im;
 
   // lambda function to compute the kernel weight
   float PI2 = pow(M_PI, 2);
@@ -199,7 +181,7 @@ Image scaleLanczos(const Image &im, float factor, float a) {
         for (int ys = ystart; ys <= yend; ++ys) {
           float w = computeK(xsrc - xs) * computeK(ysrc - ys);
           for (int z = 0; z < im.channels(); z++)
-            out(x, y, z) += im.smartAccessor(xs, ys, z, false) * w;
+            out(x, y, z) += im.get(xs, ys, z, false) * w;
         }
     }
 
@@ -207,16 +189,11 @@ Image scaleLanczos(const Image &im, float factor, float a) {
 }
 
 Image rotate(const Image &im, float theta) {
-  // --------- HANDOUT  PS05 ------------------------------
   // rotate an image around its center by theta
 
   // // center around which to rotate
   // float centerX = (im.width()-1.0)/2.0;
   // float centerY = (im.height()-1.0)/2.0;
-
-  // return im; // changeme
-
-  // --------- SOLUTION PS05 ------------------------------
 
   // center around which to rotate
   float centerX = (im.width() - 1.0) / 2.0;
@@ -244,66 +221,24 @@ Image rotate(const Image &im, float theta) {
   return imR;
 }
 
-// -----------------------------------------------------
-// --------- END --- PS05 ------------------------------
-
-// Create a surprise image
-Image create_special() {
-  // // --------- HANDOUT  PS01 ------------------------------
-  // create the image outlined in the handout
-  // return Image(1,1,1); // change this
-
-  // --------- SOLUTION PS01 ------------------------------
-  Image im(290, 150, 3);
-  im.set_color(1.0f, 1.0f, 1.0f);
-  int xstart[] = {0, 52, 103, 155, 155, 207, 207};
-  int ystart[] = {0, 0, 0, 0, 48, 0, 48};
-  int xend[] = {31, 83, 134, 186, 186, 289, 238};
-  int yend[] = {149, 102, 149, 30, 149, 30, 149};
-  for (int i = 0; i < 7; ++i) {
-    if (i != 4)
-      im.create_rectangle(xstart[i], ystart[i], xend[i], yend[i], 0.64f, 0.12f,
-                          0.2f);
-    else
-      im.create_rectangle(xstart[i], ystart[i], xend[i], yend[i], 0.55f, 0.55f,
-                          0.55f);
-  }
-  return im;
-}
 
 // Change the brightness of the image
-// const Image & means a reference to im will get passed to the function,
-// but the compiler won't let you modify it within the function.
-// So you will return a new image
 Image brightness(const Image &im, float factor) {
-  // --------- HANDOUT  PS01 ------------------------------
   // Image output(im.width(), im.height(), im.channels());
   // Modify image brightness
-  // return output;
-  // return Image(1,1,1); // Change this
 
-  // --------- SOLUTION PS01 ------------------------------
   return im * factor;
 }
 
 Image contrast(const Image &im, float factor, float midpoint) {
-  // --------- HANDOUT  PS01 ------------------------------
   // Image output(im.width(), im.height(), im.channels());
   // Modify image contrast
-  // return output;
-  // return Image(1,1,1); //Change this
-
-  // --------- SOLUTION PS01 ------------------------------
   return (im - midpoint) * factor + midpoint;
 }
 
 Image color2gray(const Image &im, const std::vector<float> &weights) {
-  // --------- HANDOUT  PS01 ------------------------------
   // Image output(im.width(), im.height(), 1);
   // Convert to grayscale
-  // return Image(1,1,1); //Change this
-
-  // --------- SOLUTION PS01 ------------------------------
   Image output(im.width(), im.height(), 1);
   for (int i = 0; i < im.width(); i++) {
     for (int j = 0; j < im.height(); j++) {
@@ -323,14 +258,9 @@ Image color2gray(const Image &im, const std::vector<float> &weights) {
 // and a three channel chrominance image. Return them in a vector with
 // luminance first
 std::vector<Image> lumiChromi(const Image &im) {
-  // --------- HANDOUT  PS01 ------------------------------
   // Create the luminance image
   // Create the chrominance image
   // Create the output vector as (luminance, chrominance)
-  // return std::vector<Image>(); //Change this
-
-  // --------- SOLUTION PS01 ------------------------------
-
   // Create the luminance
   Image im_luminance = color2gray(im);
 
@@ -370,11 +300,7 @@ Image lumiChromi2rgb(const vector<Image> &lc) {
 // Modify brightness then contrast
 Image brightnessContrastLumi(const Image &im, float brightF, float contrastF,
                              float midpoint) {
-  // --------- HANDOUT  PS01 ------------------------------
   // Modify brightness, then contrast of luminance image
-  // return Image(1,1,1);
-
-  // --------- SOLUTION PS01 ------------------------------
   // Separate luminance and chrominance
   std::vector<Image> lumi_chromi = lumiChromi(im);
   Image im_luminance = lumi_chromi[0];
@@ -397,12 +323,8 @@ Image brightnessContrastLumi(const Image &im, float brightF, float contrastF,
 }
 
 Image rgb2yuv(const Image &im) {
-  // --------- HANDOUT  PS01 ------------------------------
   // Create output image of appropriate size
   // Change colorspace
-  // return Image(1,1,1);
-
-  // --------- SOLUTION PS01 ------------------------------
   Image output(im.width(), im.height(), im.channels());
   for (int j = 0; j < im.height(); j++)
     for (int i = 0; i < im.width(); i++) {
@@ -417,12 +339,8 @@ Image rgb2yuv(const Image &im) {
 }
 
 Image yuv2rgb(const Image &im) {
-  // --------- HANDOUT  PS01 ------------------------------
   // Create output image of appropriate size
   // Change colorspace
-  // return Image(1,1,1);
-
-  // --------- SOLUTION PS01 ------------------------------
   Image output(im.width(), im.height(), im.channels());
   for (int j = 0; j < im.height(); j++)
     for (int i = 0; i < im.width(); i++) {
@@ -434,13 +352,8 @@ Image yuv2rgb(const Image &im) {
 }
 
 Image saturate(const Image &im, float factor) {
-  // --------- HANDOUT  PS01 ------------------------------
   // Create output image of appropriate size
   // Saturate image
-  // return output;
-  // return Image(1,1,1);
-
-  // --------- SOLUTION PS01 ------------------------------
   Image output = rgb2yuv(im); // Change colorspace
   for (int i = 0; i < im.width(); i++) {
     for (int j = 0; j < im.height(); j++) {
@@ -454,14 +367,10 @@ Image saturate(const Image &im, float factor) {
 
 // Gamma codes the image
 Image gamma_code(const Image &im, float gamma) {
-  // // --------- HANDOUT  PS01 ------------------------------
   // Image output(im.width(), im.height(), im.channels());
   // Gamma encodes the image
-  // return output;
-
-  // --------- SOLUTION PS01 ------------------------------
   Image output = Image(im.width(), im.height(), im.channels());
-  for (int i = 0; i < im.number_of_elements(); ++i) {
+  for (int i = 0; i < im.len(); ++i) {
     output(i) = pow(im(i), (1 / gamma));
   }
   return output;
@@ -469,12 +378,8 @@ Image gamma_code(const Image &im, float gamma) {
 
 // Quantizes the image to 2^bits levels and scales back to 0~1
 Image quantize(const Image &im, int bits) {
-  // // --------- HANDOUT  PS01 ------------------------------
   // Image output(im.width(), im.height(), im.channels());
   // Quantizes the image to 2^bits levels
-  // return output;
-
-  // --------- SOLUTION PS01 ------------------------------
   Image output(im.width(), im.height(), im.channels());
   for (int i = 0; i < im.width(); i++) {
     for (int j = 0; j < im.height(); j++) {
@@ -490,16 +395,6 @@ Image quantize(const Image &im, int bits) {
 // Compare between first quantize then gamma_encode and first gamma_encode
 // then quantize
 std::vector<Image> gamma_test(const Image &im, int bits, float gamma) {
-  // // --------- HANDOUT  PS01 ------------------------------
-  // // im1 = quantize then gamma_encode the image
-  // // im2 = gamma_encode then quantize the image
-  // // Remember to create the output images and the output vector
-  // // Push the images onto the vector
-  // // Do all the required processing
-  // // Return the vector, color image first
-  // return std::vector<Image>(); //Change this
-
-  // --------- SOLUTION PS01 ------------------------------
   Image im1 = quantize(im, bits);
   im1 = gamma_code(im1, gamma);
 
@@ -514,14 +409,6 @@ std::vector<Image> gamma_test(const Image &im, int bits, float gamma) {
 
 // Return two images in a C++ vector
 std::vector<Image> spanish(const Image &im) {
-  // --------- HANDOUT  PS01 ------------------------------
-  // Remember to create the output images and the output vector
-  // Push the images onto the vector
-  // Do all the required processing
-  // Return the vector, color image first
-  // return std::vector<Image>(); //Change this
-
-  // --------- SOLUTION PS01 ------------------------------
   // Extract the luminance
   Image output_L = color2gray(im);
 
@@ -556,14 +443,6 @@ std::vector<Image> spanish(const Image &im) {
 
 // White balances an image using the gray world assumption
 Image grayworld(const Image &im) {
-  // --------- HANDOUT  PS01 ------------------------------
-  // Implement automatic white balance by multiplying each channel
-  // of the input by a factor such that the three channel of the output
-  // image have the same mean value. The mean value of the green channel
-  // is taken as reference.
-  // return Image(1,1,1);
-
-  // --------- SOLUTION PS01 ------------------------------
   // Compute the mean per channel
   // find green mean
   float green_sum = 0;
