@@ -4,12 +4,11 @@
 #include <cfloat>
 #include <cmath>
 #include <iostream>
-#include <sstream>
 #include <string>
 #include <vector>
 
 #include "ImageException.h"
-#include "lodepng.h"
+
 
 class Image {
 public:
@@ -23,10 +22,6 @@ public:
   //      name    : string name for the image
   Image(int width, int height = 1, int channels = 1,
         const std::string &name = "");
-
-  // Constructor to create an image from a file.
-  // The file MUST to be in the PNG format
-  Image(const std::string &filename);
 
   // Image Class Destructor. 
   ~Image();
@@ -44,29 +39,22 @@ public:
   int height() const { return dim_values[1]; }          // Extent of dimension 1
   int channels() const { return dim_values[2]; }        // Extent of dimension 2
 
-  // Write an image to a file.
-  void write(const std::string &filename) const;
-  // Write image to Output directory with automatically chosen name
-  void debug_write() const;
-
-  static int debugWriteNumber; // Image number for debug write
-
   // set image pixels to corresponding values (only if channel is valid)
-  void set_color(float r = 0.0f, float g = 0.0f, float b = 0.0f);
+  void paint_color(float r = 0.0f, float g = 0.0f, float b = 0.0f);
 
   // set the rectangle bounded by [xstart, ystart] -> [xend, yend]
   // (inclusive) to specified color
-  void create_rectangle(int xstart, int ystart, int xend, int yend,
+  void draw_rectangle(int xstart, int ystart, int xend, int yend,
                         float r = 0.0f, float g = 0.0f, float b = 0.0f);
 
   // create a line segment from [xstart, ystart] to [xend, yend] with
   // specified color
-  void create_line(int xstart, int ystart, int xend, int yend, float r = 0.0f,
+  void draw_line(int xstart, int ystart, int xend, int yend, float r = 0.0f,
                    float g = 0.0f, float b = 0.0f);
   // The total number of elements.
   // Should be equal to width()*height()*channels()
   // That is, a 200x100x3 image has 60000 pixels not 20000 pixels
-  long long number_of_elements() const;
+  long long len() const;
 
   // Getters for the pixel values
   const float &operator()(int x) const;
@@ -82,7 +70,7 @@ public:
   // Safe Accessor that will return a black pixel (clamp = false) or the
   // nearest pixel value (clamp = true) when indexing out of the bounds of
   // the image
-  float smartAccessor(int x, int y, int z, bool clamp = false) const;
+  float get(int x, int y, int z, bool clamp = false, float pad_value = 0.0) const;
 
   float min() const;
   float max() const;
@@ -99,18 +87,9 @@ private:
   // that manages its own memory
   std::vector<float> image_data;
 
-  // Helper functions for reading and writing
-  // Conversion Policy:
-  //      uint8   float
-  //      0       0.f
-  //      255     1.f
-  static float uint8_to_float(const unsigned char &in);
-  static unsigned char float_to_uint8(const float &in);
-
-  // Common code shared between constructors
   // This does not allocate the image; it only initializes image metadata -
   // image name, width, height, number of channels and number of pixels
-  void initialize_image_metadata(int w, int h, int c, const std::string &name_);
+  void init_meta(int w, int h, int c, const std::string &name_);
 };
 
 
