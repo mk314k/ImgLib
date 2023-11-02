@@ -64,15 +64,15 @@ Image Filter::convolve(const Image &im, bool clamp) {
   }
   return imFilter;
 }
-// Filter Filter::transpose(){
-//     Filter res = Filter(height,width);
-//     for (int y=0; y<height; y++) {
-//         for (int x=0; x<width; x++) {
-//             res(y,x) = operator()(x,y);
-//         }
-//     }
-//     return res;
-// }
+Filter Filter::transpose(){
+    Filter res = Filter(height,width);
+    for (int y=0; y<height; y++) {
+        for (int x=0; x<width; x++) {
+            res(y,x) = operator()(x,y);
+        }
+    }
+    return res;
+}
 
 Image boxBlur_filterClass(const Image &im, int k, bool clamp) {
   // Reimplement the box filter using the filter class.
