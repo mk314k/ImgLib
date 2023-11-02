@@ -2,7 +2,9 @@
 #define __NPR__H
 
 #include "Image.h"
-#include "basicImageManipulation.h"
+#include "ImageManipulation.h"
+#include "filtering.h"
+#include "matrix.h"
 #include <iostream>
 #include <math.h>
 

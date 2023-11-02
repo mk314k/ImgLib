@@ -19,8 +19,8 @@ Image scaleNN(const Image &im, float factor) {
         // Get the source pixel value.
         // If the output is factor times bigger, the source is 1/factor times
         // bigger...
-        ys = round(1 / factor * y);
-        xs = round(1 / factor * x);
+        ys = round(y / factor);
+        xs = round(x / factor);
         out(x, y, z) = im.get(xs, ys, z, true);
       }
 
