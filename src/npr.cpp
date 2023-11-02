@@ -179,38 +179,38 @@ Image computeTensor(const Image &im, float sigmaG, float factorSigma) {
 // }
 
 
-Image testAngle(const Image &im, float sigmaG, float factor) {
-	// Extracts orientation of features in im. Angles should be mapped
-	// to [0,1]
-	// // --------- HANDOUT  PS12 ------------------------------
-	Image tens = computeTensor(im,sigmaG,factor);
-	Matrix M = Matrix::Zero(2,2);
-	float ang;
-	Eigen::EigenSolver<Matrix> eig;
-	Image res = Image(im.width(),im.height(), im.channels());
-	for (int x =0; x<res.width();x++){
-		for (int y=0; y<res.height();y++){
-			M(0,0) = tens(x,y,0);
-			M(1,1) = tens(x,y,2);
-			M(0,1) = tens(x,y,1);
-			M(1,0) = tens(x,y,1);
-			eig.compute(M);
-			if (eig.eigenvalues()(0).real()<eig.eigenvalues()(1).real()){
-				ang = atan2(-eig.eigenvectors().col(0)(1).real(),eig.eigenvectors().col(0)(0).real()); 
-			}else{
-				ang = atan2(-eig.eigenvectors().col(1)(1).real(),eig.eigenvectors().col(1)(0).real());
-			}
-			ang = ang<=0 ? ang+2*M_PI : ang;
-			ang = ang/(2*M_PI);
-			for (int z=0;z<3;z++){
-				res(x,y,z) = ang;
-			}
-		}
-	}
+// Image testAngle(const Image &im, float sigmaG, float factor) {
+// 	// Extracts orientation of features in im. Angles should be mapped
+// 	// to [0,1]
+// 	// // --------- HANDOUT  PS12 ------------------------------
+// 	Image tens = computeTensor(im,sigmaG,factor);
+// 	Matrix M(2,2);
+// 	float ang;
+// 	Eigen::EigenSolver<Matrix> eig;
+// 	Image res = Image(im.width(),im.height(), im.channels());
+// 	for (int x =0; x<res.width();x++){
+// 		for (int y=0; y<res.height();y++){
+// 			M(0,0) = tens(x,y,0);
+// 			M(1,1) = tens(x,y,2);
+// 			M(0,1) = tens(x,y,1);
+// 			M(1,0) = tens(x,y,1);
+// 			eig.compute(M);
+// 			if (eig.eigenvalues()(0).real()<eig.eigenvalues()(1).real()){
+// 				ang = atan2(-eig.eigenvectors().col(0)(1).real(),eig.eigenvectors().col(0)(0).real()); 
+// 			}else{
+// 				ang = atan2(-eig.eigenvectors().col(1)(1).real(),eig.eigenvectors().col(1)(0).real());
+// 			}
+// 			ang = ang<=0 ? ang+2*M_PI : ang;
+// 			ang = ang/(2*M_PI);
+// 			for (int z=0;z<3;z++){
+// 				res(x,y,z) = ang;
+// 			}
+// 		}
+// 	}
 
-	return res;
+// 	return res;
 
-}
+// }
 
 vector<Image> rotateBrushes(const Image &im, int nAngles) {
 	// helper function
@@ -223,78 +223,78 @@ vector<Image> rotateBrushes(const Image &im, int nAngles) {
 	return res;
 }
 
-void singleScaleOrientedPaint(const Image &im, const Image &importance,
-		Image &out, const Image &tensor, const Image &texture,int size, int N, 
-		float noise, int nAngles) {
-	// Similar to singleScalePaintImportant but brush strokes are oriented
-	// according to tensor
-	// // --------- HANDOUT  PS12 ------------------------------
-	float factor = min(float(size)/texture.width(),float(size)/texture.height());
-	Image tscaled = texture;
-	float nfact = 0;
-	int x, y, angN;
-	Matrix M = Matrix::Zero(2,2);
-	float ang;
-	Eigen::EigenSolver<Matrix> eig;
-	vector<float> color = {0,0,0};
-	if (factor<1){
-		tscaled = scaleLin(texture, factor);
-	}
-	vector<Image> rbrush = rotateBrushes(tscaled,nAngles);
-	float sum=0;
-	for (int x3=0;x3<importance.width();x3++){
-		for (int y3=0;y3<importance.height();y3++){
-			sum = sum + importance(x3,y3);
-		}
-	}
-	int N1 = N/(sum/(importance.width()*importance.height()));
+// void singleScaleOrientedPaint(const Image &im, const Image &importance,
+// 		Image &out, const Image &tensor, const Image &texture,int size, int N, 
+// 		float noise, int nAngles) {
+// 	// Similar to singleScalePaintImportant but brush strokes are oriented
+// 	// according to tensor
+// 	// // --------- HANDOUT  PS12 ------------------------------
+// 	float factor = min(float(size)/texture.width(),float(size)/texture.height());
+// 	Image tscaled = texture;
+// 	float nfact = 0;
+// 	int x, y, angN;
+// 	Matrix M(2,2);
+// 	float ang;
+// 	Eigen::EigenSolver<Matrix> eig;
+// 	vector<float> color = {0,0,0};
+// 	if (factor<1){
+// 		tscaled = scaleLin(texture, factor);
+// 	}
+// 	vector<Image> rbrush = rotateBrushes(tscaled,nAngles);
+// 	float sum=0;
+// 	for (int x3=0;x3<importance.width();x3++){
+// 		for (int y3=0;y3<importance.height();y3++){
+// 			sum = sum + importance(x3,y3);
+// 		}
+// 	}
+// 	int N1 = N/(sum/(importance.width()*importance.height()));
 
 
-	for (int i=0;i<N1;i++){
-		x = randm()*(out.width()-1);
-		y = randm()*(out.height()-1);
-		for (int z=0;z<3;z++){
-			nfact = 1 - noise/2 + noise*randm();
-			color[z] = nfact*im(x,y,z);
-		}
-		M(0,0) = tensor(x,y,0);
-		M(1,1) = tensor(x,y,2);
-		M(0,1) = tensor(x,y,1);
-		M(1,0) = tensor(x,y,1);
-		eig.compute(M);
-		if (eig.eigenvalues()(0).real()<eig.eigenvalues()(1).real()){
-			ang = atan2(-eig.eigenvectors().col(0)(1).real(),eig.eigenvectors().col(0)(0).real()); 
-		}else{
-			ang = atan2(-eig.eigenvectors().col(1)(1).real(),eig.eigenvectors().col(1)(0).real());
-		}
-		ang = ang<=0 ? ang+2*M_PI : ang;
-		ang = ang/(2*M_PI);
-		angN = floor(ang*nAngles);
-		if (importance(x,y)>=randm()){
-			brush(out,x,y,color,rbrush[angN]);
-		}
-	}
+// 	for (int i=0;i<N1;i++){
+// 		x = randm()*(out.width()-1);
+// 		y = randm()*(out.height()-1);
+// 		for (int z=0;z<3;z++){
+// 			nfact = 1 - noise/2 + noise*randm();
+// 			color[z] = nfact*im(x,y,z);
+// 		}
+// 		M(0,0) = tensor(x,y,0);
+// 		M(1,1) = tensor(x,y,2);
+// 		M(0,1) = tensor(x,y,1);
+// 		M(1,0) = tensor(x,y,1);
+// 		eig.compute(M);
+// 		if (eig.eigenvalues()(0).real()<eig.eigenvalues()(1).real()){
+// 			ang = atan2(-eig.eigenvectors().col(0)(1).real(),eig.eigenvectors().col(0)(0).real()); 
+// 		}else{
+// 			ang = atan2(-eig.eigenvectors().col(1)(1).real(),eig.eigenvectors().col(1)(0).real());
+// 		}
+// 		ang = ang<=0 ? ang+2*M_PI : ang;
+// 		ang = ang/(2*M_PI);
+// 		angN = floor(ang*nAngles);
+// 		if (importance(x,y)>=randm()){
+// 			brush(out,x,y,color,rbrush[angN]);
+// 		}
+// 	}
 
-	return;
-}
+// 	return;
+// }
 
-void orientedPaint(const Image &im, Image &out, const Image &texture, int N, int size, float noise) {
-	// Similar to painterly() but strokes are oriented along the directions of maximal structure
-	// // --------- HANDOUT  PS12 ------------------------------
-	Image tensor = computeTensor(im);
-	Image impo = Image(im.width(),im.height(),im.channels());
-	for (int x=0;x<impo.width();x++){
-		for (int y=0; y<impo.height(); y++){
-			for (int z=0; z<3; z++){
-				impo(x,y,z)=1;
-			}
-		}
-	}
-	singleScaleOrientedPaint(im,impo,out,tensor,texture,size,N,noise);
-	singleScaleOrientedPaint(im,sharpnessMap(im),out,tensor,texture,size/4,N,noise);
-	return;
+// void orientedPaint(const Image &im, Image &out, const Image &texture, int N, int size, float noise) {
+// 	// Similar to painterly() but strokes are oriented along the directions of maximal structure
+// 	// // --------- HANDOUT  PS12 ------------------------------
+// 	Image tensor = computeTensor(im);
+// 	Image impo = Image(im.width(),im.height(),im.channels());
+// 	for (int x=0;x<impo.width();x++){
+// 		for (int y=0; y<impo.height(); y++){
+// 			for (int z=0; z<3; z++){
+// 				impo(x,y,z)=1;
+// 			}
+// 		}
+// 	}
+// 	singleScaleOrientedPaint(im,impo,out,tensor,texture,size,N,noise);
+// 	singleScaleOrientedPaint(im,sharpnessMap(im),out,tensor,texture,size/4,N,noise);
+// 	return;
 
-}
+// }
 
 
 

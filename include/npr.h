@@ -21,14 +21,14 @@ void painterly(const Image &im, Image &out, const Image &texture, int N=10000, i
 Image computeTensor(const Image &im, float sigmaG=1.0f, float factor=4.0f);
 Image getBlurredLumi(const Image &im, float sigmaG);
 
-Image testAngle(const Image &im, float sigmaG=3.0f, float factor=5.0f);
+// Image testAngle(const Image &im, float sigmaG=3.0f, float factor=5.0f);
 
 vector<Image> rotateBrushes(const Image &im, int nAngles);
 
-void singleScaleOrientedPaint(const Image &im, const Image &importance, Image &out, const Image &tensor,
-	const Image &texture, int size, int N, float noise, int nAngles=36);
+// void singleScaleOrientedPaint(const Image &im, const Image &importance, Image &out, const Image &tensor,
+// 	const Image &texture, int size, int N, float noise, int nAngles=36);
 
-void orientedPaint(const Image &im, Image &out, const Image &texture, int N=10000, int size=50, float noise=0.3);
+// void orientedPaint(const Image &im, Image &out, const Image &texture, int N=10000, int size=50, float noise=0.3);
 
 
 #endif
