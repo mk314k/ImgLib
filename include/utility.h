@@ -7,14 +7,6 @@
 #include "Image.h"
 
 
-class utils{
-
-public:
-    Image imread(const std::string &filename);
-    
-
-
-};
 
 
 

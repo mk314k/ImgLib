@@ -1,18 +1,13 @@
-
-
-#include "filtering.h"
+#include "../include/filtering.h"
 #include <cassert>
 #include <cmath>
 
 using namespace std;
 
 Image boxBlur(const Image &im, int k, bool clamp) {
-  // --------- HANDOUT  PS02 ------------------------------
   // Convolve an image with a box filter of size k by k
   // It is safe to asssume k is odd.
-  // return im; // change this
 
-  // --------- SOLUTION PS02 ------------------------------
   // Create a new empty image
   Image filtered(im.width(), im.height(), im.channels());
   int sideSize = int((k - 1.0f) / 2.0f);
@@ -27,7 +22,7 @@ Image boxBlur(const Image &im, int k, bool clamp) {
         accum = 0.0f;
         for (int yBox = -sideSize; yBox < -sideSize + k; yBox++) {
           for (int xBox = -sideSize; xBox < -sideSize + k; xBox++) {
-            accum += im.smartAccessor(x - xBox, y - yBox, z, clamp);
+            accum += im.get(x - xBox, y - yBox, z, clamp);
           }
         }
 
@@ -40,11 +35,7 @@ Image boxBlur(const Image &im, int k, bool clamp) {
 }
 
 Image Filter::convolve(const Image &im, bool clamp) {
-  // --------- HANDOUT  PS02 ------------------------------
   // Write a convolution function for the filter class
-  // return im; // change this
-
-  // --------- SOLUTION PS02 ------------------------------
   Image imFilter(im.width(), im.height(), im.channels());
 
   int sideW = int((width - 1.0) / 2.0);
@@ -62,7 +53,7 @@ Image Filter::convolve(const Image &im, bool clamp) {
             // flipped kernel, xFilter, yFilter have different
             // signs in filter and im
             accum += operator()(xFilter, yFilter) *
-                     im.smartAccessor(x - xFilter + sideW, y - yFilter + sideH,
+                     im.get(x - xFilter + sideW, y - yFilter + sideH,
                                       z, clamp);
           }
         }
@@ -84,12 +75,8 @@ Image Filter::convolve(const Image &im, bool clamp) {
 // }
 
 Image boxBlur_filterClass(const Image &im, int k, bool clamp) {
-  // --------- HANDOUT  PS02 ------------------------------
   // Reimplement the box filter using the filter class.
   // check that your results match those in the previous function "boxBlur"
-  // return im; // change this
-
-  // --------- SOLUTION PS02 ------------------------------
   vector<float> fData(k * k, 1.0 / (k * k));
   Filter boxFilter(fData, k, k);
   Image imFilter = boxFilter.convolve(im, clamp);
@@ -97,12 +84,8 @@ Image boxBlur_filterClass(const Image &im, int k, bool clamp) {
 }
 
 Image gradientMagnitude(const Image &im, bool clamp) {
-  // --------- HANDOUT  PS02 ------------------------------
   // Uses a Sobel kernel to compute the horizontal and vertical components
   // of the gradient of an image and returns the gradient magnitude.
-  // return im; // change this
-
-  // --------- SOLUTION PS02 ------------------------------
   // Sobel filtering in x direction
   Filter sobelX(vector<float>{-1.0, 0.0, 1.0, -2.0, 0.0, 2.0, -1.0, 0.0, 1.0},
                 3, 3);
@@ -118,19 +101,15 @@ Image gradientMagnitude(const Image &im, bool clamp) {
   Image magnitude = imSobelX * imSobelX + imSobelY * imSobelY;
 
   // take the square root
-  for (int i = 0; i < magnitude.number_of_elements(); i++) {
+  for (int i = 0; i < magnitude.len(); i++) {
     magnitude(i) = sqrt(magnitude(i));
   }
   return magnitude;
 }
 
 vector<float> gauss1DFilterValues(float sigma, float truncate) {
-  // --------- HANDOUT  PS02 ------------------------------
   // Create a vector containing the normalized values in a 1D Gaussian filter
   // Truncate the gaussian at truncate*sigma.
-  // return vector<float>();
-
-  // --------- SOLUTION PS02 ------------------------------
   // compute the support of the filter
   int offset = int(ceil(truncate * sigma));
   int filterSize = 2 * offset + 1;
@@ -153,11 +132,7 @@ vector<float> gauss1DFilterValues(float sigma, float truncate) {
 
 Image gaussianBlur_horizontal(const Image &im, float sigma, float truncate,
                               bool clamp) {
-  // --------- HANDOUT  PS02 ------------------------------
   // Gaussian blur across the rows of an image
-  // return im;
-
-  // --------- SOLUTION PS02 ------------------------------
   // Filter in the x direction
   vector<float> fData = gauss1DFilterValues(sigma, truncate);
   Filter gaussX(fData, fData.size(), 1);
@@ -166,12 +141,8 @@ Image gaussianBlur_horizontal(const Image &im, float sigma, float truncate,
 }
 
 vector<float> gauss2DFilterValues(float sigma, float truncate) {
-  // --------- HANDOUT  PS02 ------------------------------
   // Create a vector containing the normalized values in a 2D Gaussian
   // filter. Truncate the gaussian at truncate*sigma.
-  // return vector<float>();
-
-  // --------- SOLUTION PS02 ------------------------------
   // Compute the filter size
   int offset = int(ceil(truncate * sigma));
   int k = 2 * offset + 1;
@@ -204,11 +175,7 @@ vector<float> gauss2DFilterValues(float sigma, float truncate) {
 
 Image gaussianBlur_2D(const Image &im, float sigma, float truncate,
                       bool clamp) {
-  // --------- HANDOUT  PS02 ------------------------------
   // Blur an image with a full 2D rotationally symmetric Gaussian kernel
-  // return im;
-
-  // --------- SOLUTION PS02 ------------------------------
   // Blur using a 2D gaussian filter
   vector<float> fData = gauss2DFilterValues(sigma, truncate);
   int k = sqrt(fData.size());
@@ -220,12 +187,8 @@ Image gaussianBlur_2D(const Image &im, float sigma, float truncate,
 
 Image gaussianBlur_separable(const Image &im, float sigma, float truncate,
                              bool clamp) {
-  // --------- HANDOUT  PS02 ------------------------------
   // Use principles of separability to blur an image using 2 1D Gaussian
   // Filters
-  // return im;
-
-  // --------- SOLUTION PS02 ------------------------------
   // Blur using two 1D filters in the x and y directions
   vector<float> fData = gauss1DFilterValues(sigma, truncate);
   Filter gaussX(fData, fData.size(), 1);
@@ -238,11 +201,7 @@ Image gaussianBlur_separable(const Image &im, float sigma, float truncate,
 
 Image unsharpMask(const Image &im, float sigma, float truncate, float strength,
                   bool clamp) {
-  // --------- HANDOUT  PS02 ------------------------------
   // Sharpen an image
-  // return im;
-
-  // --------- SOLUTION PS02 ------------------------------
   // Get the low pass image
   Image lowPass = gaussianBlur_separable(im, sigma, truncate, clamp);
   // Subtract it from the original image to get the high pass image
@@ -255,11 +214,7 @@ Image unsharpMask(const Image &im, float sigma, float truncate, float strength,
 
 Image bilateral(const Image &im, float sigmaRange, float sigmaDomain,
                 float truncateDomain, bool clamp) {
-  // --------- HANDOUT  PS02 ------------------------------
   // Denoise an image using the bilateral filter
-  // return im;
-
-  // --------- SOLUTION PS02 ------------------------------
   Image imFilter(im.width(), im.height(), im.channels());
 
   // calculate the filter size
@@ -281,9 +236,9 @@ Image bilateral(const Image &im, float sigmaRange, float sigmaDomain,
             // calculate the distance between the 2 pixels (in range)
             range_dist = 0.0f; // |R-R1|^2 + |G-G1|^2 + |B-B1|^2
             for (int z1 = 0; z1 < imFilter.channels(); z1++) {
-              tmp = im.smartAccessor(x, y, z1, clamp); // center pixel
+              tmp = im.get(x, y, z1, clamp); // center pixel
               tmp -=
-                  im.smartAccessor(x + xFilter - offset, y + yFilter - offset,
+                  im.get(x + xFilter - offset, y + yFilter - offset,
                                    z1, clamp); // neighbor
               tmp *= tmp;                      // square
               range_dist += tmp;
@@ -297,7 +252,7 @@ Image bilateral(const Image &im, float sigmaRange, float sigmaDomain,
 
             normalizer += factorDomain * factorRange;
             accum += factorDomain * factorRange *
-                     im.smartAccessor(x + xFilter - offset,
+                     im.get(x + xFilter - offset,
                                       y + yFilter - offset, z, clamp);
           }
 
@@ -311,13 +266,8 @@ Image bilateral(const Image &im, float sigmaRange, float sigmaDomain,
 
 Image bilaYUV(const Image &im, float sigmaRange, float sigmaY, float sigmaUV,
               float truncateDomain, bool clamp) {
-  // --------- HANDOUT  PS02 ------------------------------
-  // 6.865 only
   // Bilateral Filter an image separately for
   // the Y and UV components of an image
-  // return im;
-
-  // --------- SOLUTION PS02 ------------------------------
   // convert from RGB to YUV
   Image imYUV = rgb2yuv(im);
 
@@ -340,9 +290,6 @@ Image bilaYUV(const Image &im, float sigmaRange, float sigmaY, float sigmaUV,
   return bilRGB;
 }
 
-/**************************************************************
- //               DON'T EDIT BELOW THIS LINE                //
- *************************************************************/
 
 // Create an image of 0's with a value of 1 in the middle. This function
 // can be used to test that you have properly set the kernel values in your

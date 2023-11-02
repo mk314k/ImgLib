@@ -2,7 +2,8 @@
 #define __MORPHING__H
 
 #include "Image.h"
-#include "basicImageManipulation.h"
+#include "ImageManipulation.h"
+#include "ImageHandler.h"
 #include <cmath>
 #include <iostream>
 

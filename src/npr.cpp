@@ -1,9 +1,4 @@
-// npr.cpp
-// Assignment 8
-
-#include "npr.h"
-#include "filtering.h"
-#include "matrix.h"
+#include "../include/npr.h"
 #include <algorithm>
 #include <math.h>
 
@@ -18,7 +13,6 @@ float randm(){
 
 void brush(Image &im, int x, int y, vector<float> color, const Image &texture) {
 	// Draws a brushstroke defined by texture and color at (x,y) in im
-	// // --------- HANDOUT  PS12 ------------------------------
 	int xs = max(x -texture.width()/2, texture.width()/2), xe=min(x+texture.width()/2, im.width()-texture.width()/2);
 	int ys = max(y -texture.height()/2, texture.height()/2), ye=min(y+texture.height()/2, im.height()-texture.height()/2);
 	float op;
@@ -42,7 +36,6 @@ void brush(Image &im, int x, int y, vector<float> color, const Image &texture) {
 void singleScalePaint(const Image &im, Image &out, const Image &texture, int size, int N, float noise) {
 	// Create painted rendering by splatting brushstrokes at N random locations
 	// in your ouptut image
-	// // --------- HANDOUT  PS12 ------------------------------
 	float factor = min(float(size)/texture.width(),float(size)/texture.height());
 	Image tscaled = scaleLin(texture, factor);
 	float nfact = 0;
@@ -69,7 +62,6 @@ void singleScalePaintImportance(const Image &im, const Image &importance,
 						Image &out, const Image &texture, int size, int N, float noise) {
 	// Create painted rendering but vary the density of the strokes according to
 	// an importance map
-	// // --------- HANDOUT  PS12 ------------------------------
 	float factor = min(float(size)/texture.width(),float(size)/texture.height());
 	Image tscaled = texture;
 	float nfact = 0;
