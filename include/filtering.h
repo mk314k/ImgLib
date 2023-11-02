@@ -2,7 +2,7 @@
 #define __FILTERING__H
 
 #include "Image.h"
-#include "basicImageManipulation.h"
+#include "ImageManipulation.h"
 #include <cmath>
 #include <iostream>
 
