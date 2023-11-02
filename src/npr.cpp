@@ -153,25 +153,24 @@ void painterly(const Image &im, Image &out, const Image &texture, int N, int siz
 //   return imSobelY;
 // }
 
-// Image computeTensor(const Image &im, float sigmaG, float factorSigma) {
-//   // // --------- HANDOUT  PS07 ------------------------------
-//   // Compute xx/xy/yy Tensor of an image. (stored in that order)
-//   vector<Image> lumChrom = lumiChromi(im);
-//   Image imb = gaussianBlur_separable(im,sigmaG);
-//   Image imx = gradientX(imb,true);
-//   Image imy = gradientY(imb,true);
-//   Image res = Image(im.extent(0),im.extent(1),im.extent(2));
-//   for (int x =0; x<res.width();x++){
-//     for (int y=0; y<res.height();y++){
-//       res(x,y,0) = powf(imx(x,y),2);
-//       res(x,y,1) = imx(x,y)*imy(x,y);
-//       res(x,y,2) = imy(x,y)*imy(x,y);
-//     }
-//   }
-//   Image result = gaussianBlur_separable(res,sigmaG*factorSigma);
+Image computeTensor(const Image &im, float sigmaG, float factorSigma) {
+  // Compute xx/xy/yy Tensor of an image. (stored in that order)
+  vector<Image> lumChrom = lumiChromi(im);
+  Image imb = gaussianBlur_separable(im,sigmaG);
+  Image imx = gradientX(imb,true);
+  Image imy = gradientY(imb,true);
+  Image res = Image(im.extent(0),im.extent(1),im.extent(2));
+  for (int x =0; x<res.width();x++){
+    for (int y=0; y<res.height();y++){
+      res(x,y,0) = powf(imx(x,y),2);
+      res(x,y,1) = imx(x,y)*imy(x,y);
+      res(x,y,2) = imy(x,y)*imy(x,y);
+    }
+  }
+  Image result = gaussianBlur_separable(res,sigmaG*factorSigma);
 
-//   return result;
-// }
+  return result;
+}
 
 // Image computeTensor(const Image &im, float sigmaG, float factorSigma) {
 //  	// Compute xx/xy/yy Tensor of an image. (stored in that order)

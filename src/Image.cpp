@@ -189,6 +189,7 @@ Image::Image(int width, int height, int channels ,const std::string &name_) {
   }
   image_data = std::vector<float>(size_of_data, 0.f);
 }
+Image::~Image(){};
 
 void Image::init_meta(int w, int h, int c,
                                       const std::string &name_) {

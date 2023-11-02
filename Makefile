@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++11
+CXXFLAGS = -std=c++11 -Iinclude
 SRC_DIR = src
 BUILD_DIR = build
 EXECUTABLE = imglib
