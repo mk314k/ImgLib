@@ -63,4 +63,123 @@ Canvas resize_bilinear(const Canvas& src, float scale_x, float scale_y) {
   return out;
 }
 
+static float mitchell_netravali_weight(float d, float b, float c) {
+  const float ax = std::abs(d);
+  const float ax2 = ax * ax;
+  const float ax3 = ax2 * ax;
+  if (ax < 1.0f) {
+    return ((12.0f - 9.0f * b - 6.0f * c) * ax3 +
+            (-18.0f + 12.0f * b + 6.0f * c) * ax2 + (6.0f - 2.0f * b)) /
+           6.0f;
+  }
+  if (ax < 2.0f) {
+    return ((-b - 6.0f * c) * ax3 + (6.0f * b + 30.0f * c) * ax2 +
+            (-12.0f * b - 48.0f * c) * ax + (8.0f * b + 24.0f * c)) /
+           6.0f;
+  }
+  return 0.0f;
+}
+
+Canvas resize_bicubic(const Canvas& src,
+                      float scale_x,
+                      float scale_y,
+                      float b_param,
+                      float c_param) {
+  const float sy = (scale_y > 0.0f) ? scale_y : scale_x;
+  const int out_w = std::max(1, static_cast<int>(std::floor(src.width() * scale_x)));
+  const int out_h = std::max(1, static_cast<int>(std::floor(src.height() * sy)));
+  Canvas out(out_w, out_h, src.channels());
+
+  for (int y = 0; y < out_h; ++y) {
+    const float src_y = static_cast<float>(y) / sy;
+    const int iy0 = static_cast<int>(std::floor(src_y)) - 2;
+    for (int x = 0; x < out_w; ++x) {
+      const float src_x = static_cast<float>(x) / scale_x;
+      const int ix0 = static_cast<int>(std::floor(src_x)) - 2;
+
+      for (int ky = iy0; ky <= iy0 + 4; ++ky) {
+        const float wy = mitchell_netravali_weight(src_y - ky, b_param, c_param);
+        for (int kx = ix0; kx <= ix0 + 4; ++kx) {
+          const float w = wy * mitchell_netravali_weight(src_x - kx, b_param, c_param);
+          for (int ch = 0; ch < src.channels(); ++ch) {
+            out.at(x, y, ch) += src.sample(kx, ky, ch, BorderMode::ClampEdge) * w;
+          }
+        }
+      }
+    }
+  }
+  return out;
+}
+
+static float lanczos_weight(float d, float a) {
+  const float ax = std::abs(d);
+  if (ax < 1e-6f) return 1.0f;
+  if (ax >= a) return 0.0f;
+  const float pix = kPi * d;
+  return (a * std::sin(pix) * std::sin(pix / a)) / (pix * pix);
+}
+
+Canvas resize_lanczos(const Canvas& src, float scale_x, float scale_y, float lobes) {
+  const float sy = (scale_y > 0.0f) ? scale_y : scale_x;
+  const int out_w = std::max(1, static_cast<int>(std::floor(src.width() * scale_x)));
+  const int out_h = std::max(1, static_cast<int>(std::floor(src.height() * sy)));
+  Canvas out(out_w, out_h, src.channels());
+  const int rad = static_cast<int>(std::ceil(lobes));
+
+  for (int y = 0; y < out_h; ++y) {
+    const float src_y = static_cast<float>(y) / sy;
+    const int iy_center = static_cast<int>(std::floor(src_y));
+    for (int x = 0; x < out_w; ++x) {
+      const float src_x = static_cast<float>(x) / scale_x;
+      const int ix_center = static_cast<int>(std::floor(src_x));
+
+      for (int ky = iy_center - rad + 1; ky <= iy_center + rad; ++ky) {
+        const float wy = lanczos_weight(src_y - ky, lobes);
+        for (int kx = ix_center - rad + 1; kx <= ix_center + rad; ++kx) {
+          const float w = wy * lanczos_weight(src_x - kx, lobes);
+          for (int ch = 0; ch < src.channels(); ++ch) {
+            out.at(x, y, ch) += src.sample(kx, ky, ch, BorderMode::ClampEdge) * w;
+          }
+        }
+      }
+    }
+  }
+  return out;
+}
+
+Canvas resize(const Canvas& src, float scale, FilterMode mode) {
+  switch (mode) {
+    case FilterMode::Nearest:
+      return resize_nearest(src, scale);
+    case FilterMode::Bicubic:
+      return resize_bicubic(src, scale);
+    case FilterMode::Lanczos3:
+      return resize_lanczos(src, scale, -1.0f, 3.0f);
+    case FilterMode::Bilinear:
+    default:
+      return resize_bilinear(src, scale);
+  }
+}
+
+Canvas rotate_center(const Canvas& src, float angle_radians) {
+  const float cx = 0.5f * static_cast<float>(src.width() - 1);
+  const float cy = 0.5f * static_cast<float>(src.height() - 1);
+  const float cos_t = std::cos(angle_radians);
+  const float sin_t = std::sin(angle_radians);
+
+  Canvas out(src.width(), src.height(), src.channels());
+  for (int y = 0; y < src.height(); ++y) {
+    for (int x = 0; x < src.width(); ++x) {
+      const float dx = static_cast<float>(x) - cx;
+      const float dy = cy - static_cast<float>(y);
+      const float sx = dx * cos_t + dy * sin_t + cx;
+      const float sy = cy - (-dx * sin_t + dy * cos_t);
+      for (int c = 0; c < src.channels(); ++c) {
+        out.at(x, y, c) = sample_bilinear(src, sx, sy, c, BorderMode::ZeroPad);
+      }
+    }
+  }
+  return out;
+}
+
 } // namespace imglib
