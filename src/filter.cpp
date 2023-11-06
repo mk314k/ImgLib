@@ -126,4 +126,117 @@ Canvas gaussian_blur_2d(const Canvas& src,
   return k.convolve(src, border);
 }
 
+Canvas unsharp_mask(const Canvas& src,
+                    float sigma,
+                    float strength,
+                    float truncate) {
+  const Canvas blurred = gaussian_blur_separable(src, sigma, truncate);
+  const Canvas detail = src - blurred;
+  return src + detail * strength;
+}
+
+Canvas sobel_x(const Canvas& src, BorderMode border) {
+  const Kernel2D kx(3, 3, {-1.0f, 0.0f, 1.0f, -2.0f, 0.0f, 2.0f, -1.0f, 0.0f, 1.0f});
+  return kx.convolve(src, border);
+}
+
+Canvas sobel_y(const Canvas& src, BorderMode border) {
+  const Kernel2D ky(3, 3, {-1.0f, -2.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 2.0f, 1.0f});
+  return ky.convolve(src, border);
+}
+
+Canvas sobel_magnitude(const Canvas& src, BorderMode border) {
+  const Canvas gx = sobel_x(src, border);
+  const Canvas gy = sobel_y(src, border);
+  Canvas mag = gx * gx + gy * gy;
+  for (std::size_t i = 0; i < mag.size(); ++i) {
+    mag.flat(i) = std::sqrt(mag.flat(i));
+  }
+  return mag;
+}
+
+Canvas bilateral_filter(const Canvas& src,
+                        float sigma_range,
+                        float sigma_spatial,
+                        float truncate,
+                        BorderMode border) {
+  const int radius = std::max(1, static_cast<int>(std::ceil(sigma_spatial * truncate)));
+  Canvas out(src.width(), src.height(), src.channels());
+
+  for (int y = 0; y < src.height(); ++y) {
+    for (int x = 0; x < src.width(); ++x) {
+      std::vector<float> accum(static_cast<std::size_t>(src.channels()), 0.0f);
+      float norm = 0.0f;
+
+      for (int dy = -radius; dy <= radius; ++dy) {
+        for (int dx = -radius; dx <= radius; ++dx) {
+          float range_d2 = 0.0f;
+          for (int c = 0; c < src.channels(); ++c) {
+            const float diff = src.at(x, y, c) - src.sample(x + dx, y + dy, c, border);
+            range_d2 += diff * diff;
+          }
+          const float w_spatial = std::exp(
+              -static_cast<float>(dx * dx + dy * dy) / (2.0f * sigma_spatial * sigma_spatial));
+          const float w_range = std::exp(-range_d2 / (2.0f * sigma_range * sigma_range));
+          const float w = w_spatial * w_range;
+          norm += w;
+          for (int c = 0; c < src.channels(); ++c) {
+            accum[static_cast<std::size_t>(c)] +=
+                w * src.sample(x + dx, y + dy, c, border);
+          }
+        }
+      }
+      for (int c = 0; c < src.channels(); ++c) {
+        out.at(x, y, c) = accum[static_cast<std::size_t>(c)] / std::max(1e-8f, norm);
+      }
+    }
+  }
+  return out;
+}
+
+Canvas bilateral_yuv_filter(const Canvas& src,
+                            float sigma_range,
+                            float sigma_y,
+                            float sigma_uv,
+                            float truncate) {
+  Canvas yuv = rgb_to_yuv(src);
+  const Canvas filt_y = bilateral_filter(yuv, sigma_range, sigma_y, truncate);
+  const Canvas filt_uv = bilateral_filter(yuv, sigma_range, sigma_uv, truncate);
+  for (int y = 0; y < src.height(); ++y) {
+    for (int x = 0; x < src.width(); ++x) {
+      yuv.at(x, y, 0) = filt_y.at(x, y, 0);
+      yuv.at(x, y, 1) = filt_uv.at(x, y, 1);
+      yuv.at(x, y, 2) = filt_uv.at(x, y, 2);
+    }
+  }
+  return yuv_to_rgb(yuv);
+}
+
+Canvas max_pool_filter(const Canvas& src, int window_diameter) {
+  const int lo = window_diameter / 2;
+  const int hi = window_diameter - lo - 1;
+  Canvas out(src.width(), src.height(), src.channels());
+
+  for (int y = lo; y < src.height() - hi; ++y) {
+    for (int x = lo; x < src.width() - hi; ++x) {
+      for (int c = 0; c < src.channels(); ++c) {
+        float best = src.at(x, y, c);
+        for (int dy = -lo; dy <= hi; ++dy) {
+          for (int dx = -lo; dx <= hi; ++dx) {
+            best = std::max(best, src.at(x + dx, y + dy, c));
+          }
+        }
+        out.at(x, y, c) = best;
+      }
+    }
+  }
+  return out;
+}
+
+Canvas unit_impulse(int size) {
+  Canvas out(size, size, 1, 0.0f);
+  out.at(size / 2, size / 2, 0) = 1.0f;
+  return out;
+}
+
 } // namespace imglib
