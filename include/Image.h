@@ -75,6 +75,10 @@ public:
   float min() const;
   float max() const;
 
+  void copyFromGPU();
+  void copyToGPU();
+  void processWithCUDA();
+
   // The "private" section contains functions and variables that cannot be
   // accessed from outside the class.
 private:
@@ -90,6 +94,7 @@ private:
   // This does not allocate the image; it only initializes image metadata -
   // image name, width, height, number of channels and number of pixels
   void init_meta(int w, int h, int c, const std::string &name_);
+  float *device_image_data;
 };
 
 
