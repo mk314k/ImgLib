@@ -36,6 +36,22 @@ Canvas quantize_bits(const Canvas& src, int bits_per_channel);
 Canvas gray_world_balance(const Canvas& src);
 std::pair<Canvas, Canvas> opponent_afterimage_pair(const Canvas& src);
 
+Canvas rgb_to_hsl(const Canvas& src);
+Canvas hsl_to_rgb(const Canvas& src);
+Canvas shift_hsl(const Canvas& src,
+                 float delta_hue_deg,
+                 float sat_scale = 1.0f,
+                 float light_offset = 0.0f);
+
+Canvas adjust_levels(const Canvas& src,
+                     float in_black = 0.0f,
+                     float in_white = 1.0f,
+                     float gamma = 1.0f,
+                     float out_black = 0.0f,
+                     float out_white = 1.0f);
+
+Canvas equalize_histogram(const Canvas& src);
+
 } // namespace imglib
 
 #endif // IMGLIB_COLOR_HPP

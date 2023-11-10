@@ -179,4 +179,148 @@ std::pair<Canvas, Canvas> opponent_afterimage_pair(const Canvas& src) {
   return {inv_chroma, luma};
 }
 
+Canvas rgb_to_hsl(const Canvas& src) {
+  if (src.channels() < 3) {
+    throw std::invalid_argument("rgb_to_hsl requires 3 channels");
+  }
+  Canvas out(src.width(), src.height(), 3);
+  for (int y = 0; y < src.height(); ++y) {
+    for (int x = 0; x < src.width(); ++x) {
+      const float r = std::max(0.0f, std::min(1.0f, src.at(x, y, 0)));
+      const float g = std::max(0.0f, std::min(1.0f, src.at(x, y, 1)));
+      const float b = std::max(0.0f, std::min(1.0f, src.at(x, y, 2)));
+      const float cmax = std::max(r, std::max(g, b));
+      const float cmin = std::min(r, std::min(g, b));
+      const float delta = cmax - cmin;
+      const float l = 0.5f * (cmax + cmin);
+
+      float h = 0.0f;
+      float s = 0.0f;
+      if (delta > 1e-6f) {
+        s = delta / (1.0f - std::abs(2.0f * l - 1.0f));
+        if (cmax == r) {
+          h = std::fmod((g - b) / delta, 6.0f);
+          if (h < 0.0f) h += 6.0f;
+        } else if (cmax == g) {
+          h = ((b - r) / delta) + 2.0f;
+        } else {
+          h = ((r - g) / delta) + 4.0f;
+        }
+        h /= 6.0f;
+      }
+      out.at(x, y, 0) = h;
+      out.at(x, y, 1) = std::max(0.0f, std::min(1.0f, s));
+      out.at(x, y, 2) = std::max(0.0f, std::min(1.0f, l));
+    }
+  }
+  return out;
+}
+
+Canvas hsl_to_rgb(const Canvas& src) {
+  if (src.channels() < 3) {
+    throw std::invalid_argument("hsl_to_rgb requires 3 channels");
+  }
+  Canvas out(src.width(), src.height(), 3);
+  for (int y = 0; y < src.height(); ++y) {
+    for (int x = 0; x < src.width(); ++x) {
+      float h = std::fmod(src.at(x, y, 0), 1.0f);
+      if (h < 0.0f) h += 1.0f;
+      const float s = std::max(0.0f, std::min(1.0f, src.at(x, y, 1)));
+      const float l = std::max(0.0f, std::min(1.0f, src.at(x, y, 2)));
+
+      const float c = (1.0f - std::abs(2.0f * l - 1.0f)) * s;
+      const float h6 = h * 6.0f;
+      const float x_val = c * (1.0f - std::abs(std::fmod(h6, 2.0f) - 1.0f));
+      const float m = l - 0.5f * c;
+
+      float r1 = 0.0f, g1 = 0.0f, b1 = 0.0f;
+      if (h6 < 1.0f) {
+        r1 = c; g1 = x_val; b1 = 0.0f;
+      } else if (h6 < 2.0f) {
+        r1 = x_val; g1 = c; b1 = 0.0f;
+      } else if (h6 < 3.0f) {
+        r1 = 0.0f; g1 = c; b1 = x_val;
+      } else if (h6 < 4.0f) {
+        r1 = 0.0f; g1 = x_val; b1 = c;
+      } else if (h6 < 5.0f) {
+        r1 = x_val; g1 = 0.0f; b1 = c;
+      } else {
+        r1 = c; g1 = 0.0f; b1 = x_val;
+      }
+      out.at(x, y, 0) = r1 + m;
+      out.at(x, y, 1) = g1 + m;
+      out.at(x, y, 2) = b1 + m;
+    }
+  }
+  return out;
+}
+
+Canvas shift_hsl(const Canvas& src,
+                 float delta_hue_deg,
+                 float sat_scale,
+                 float light_offset) {
+  Canvas hsl = rgb_to_hsl(src);
+  const float dh = delta_hue_deg / 360.0f;
+  for (int y = 0; y < hsl.height(); ++y) {
+    for (int x = 0; x < hsl.width(); ++x) {
+      float h = std::fmod(hsl.at(x, y, 0) + dh, 1.0f);
+      if (h < 0.0f) h += 1.0f;
+      hsl.at(x, y, 0) = h;
+      hsl.at(x, y, 1) = std::max(0.0f, std::min(1.0f, hsl.at(x, y, 1) * sat_scale));
+      hsl.at(x, y, 2) = std::max(0.0f, std::min(1.0f, hsl.at(x, y, 2) + light_offset));
+    }
+  }
+  return hsl_to_rgb(hsl);
+}
+
+Canvas adjust_levels(const Canvas& src,
+                     float in_black,
+                     float in_white,
+                     float gamma,
+                     float out_black,
+                     float out_white) {
+  const float span = std::max(1e-6f, in_white - in_black);
+  const float inv_gamma = 1.0f / std::max(1e-4f, gamma);
+  Canvas out(src.width(), src.height(), src.channels());
+  for (std::size_t i = 0; i < src.size(); ++i) {
+    const float norm =
+        std::max(0.0f, std::min(1.0f, (src.flat(i) - in_black) / span));
+    const float curved = std::pow(norm, inv_gamma);
+    out.flat(i) = out_black + curved * (out_white - out_black);
+  }
+  return out;
+}
+
+Canvas equalize_histogram(const Canvas& src) {
+  LumaChromaPair lc = split_luma_chroma(src);
+  std::vector<int> hist(256, 0);
+  const int total_px = lc.luma.width() * lc.luma.height();
+
+  for (int y = 0; y < lc.luma.height(); ++y) {
+    for (int x = 0; x < lc.luma.width(); ++x) {
+      const int bin = std::max(
+          0, std::min(255, static_cast<int>(std::round(lc.luma.at(x, y, 0) * 255.0f))));
+      hist[static_cast<std::size_t>(bin)] += 1;
+    }
+  }
+
+  std::vector<float> cdf(256, 0.0f);
+  int running = 0;
+  for (int b = 0; b < 256; ++b) {
+    running += hist[static_cast<std::size_t>(b)];
+    cdf[static_cast<std::size_t>(b)] =
+        static_cast<float>(running) / static_cast<float>( std::max(1, total_px));
+  }
+
+  for (int y = 0; y < lc.luma.height(); ++y) {
+    for (int x = 0; x < lc.luma.width(); ++x) {
+      const int bin = std::max(
+          0, std::min(255, static_cast<int>(std::round(lc.luma.at(x, y, 0) * 255.0f))));
+      lc.luma.at(x, y, 0) = cdf[static_cast<std::size_t>(bin)];
+    }
+  }
+
+  return (src.channels() == 1) ? lc.luma : merge_luma_chroma(lc).clamped();
+}
+
 } // namespace imglib
