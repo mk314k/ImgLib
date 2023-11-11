@@ -182,4 +182,66 @@ Canvas rotate_center(const Canvas& src, float angle_radians) {
   return out;
 }
 
+Canvas crop_region(const Canvas& src, int x0, int y0, int width, int height) {
+  if (width <= 0 || height <= 0) {
+    throw std::invalid_argument("crop_region width and height must be positive");
+  }
+  Canvas out(width, height, src.channels());
+  for (int y = 0; y < height; ++y) {
+    for (int x = 0; x < width; ++x) {
+      for (int c = 0; c < src.channels(); ++c) {
+        out.at(x, y, c) = src.sample(x0 + x, y0 + y, c, BorderMode::ClampEdge);
+      }
+    }
+  }
+  return out;
+}
+
+Canvas flip_horizontal(const Canvas& src) {
+  Canvas out(src.width(), src.height(), src.channels());
+  for (int y = 0; y < src.height(); ++y) {
+    for (int x = 0; x < src.width(); ++x) {
+      const int mx = src.width() - 1 - x;
+      for (int c = 0; c < src.channels(); ++c) {
+        out.at(x, y, c) = src.at(mx, y, c);
+      }
+    }
+  }
+  return out;
+}
+
+Canvas flip_vertical(const Canvas& src) {
+  Canvas out(src.width(), src.height(), src.channels());
+  for (int y = 0; y < src.height(); ++y) {
+    const int my = src.height() - 1 - y;
+    for (int x = 0; x < src.width(); ++x) {
+      for (int c = 0; c < src.channels(); ++c) {
+        out.at(x, y, c) = src.at(x, my, c);
+      }
+    }
+  }
+  return out;
+}
+
+Canvas apply_vignette(const Canvas& src, float strength, float power) {
+  const float cx = 0.5f * static_cast<float>(src.width() - 1);
+  const float cy = 0.5f * static_cast<float>(src.height() - 1);
+  const float max_r = std::max(1.0f, std::sqrt(cx * cx + cy * cy));
+  Canvas out(src.width(), src.height(), src.channels());
+
+  for (int y = 0; y < src.height(); ++y) {
+    for (int x = 0; x < src.width(); ++x) {
+      const float dx = static_cast<float>(x) - cx;
+      const float dy = static_cast<float>(y) - cy;
+      const float r_norm = std::sqrt(dx * dx + dy * dy) / max_r;
+      const float falloff =
+          std::max(0.0f, 1.0f - strength * std::pow(r_norm, power));
+      for (int c = 0; c < src.channels(); ++c) {
+        out.at(x, y, c) = src.at(x, y, c) * falloff;
+      }
+    }
+  }
+  return out;
+}
+
 } // namespace imglib

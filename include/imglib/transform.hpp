@@ -36,6 +36,11 @@ Canvas resize(const Canvas& src,
 
 Canvas rotate_center(const Canvas& src, float angle_radians);
 
+Canvas crop_region(const Canvas& src, int x0, int y0, int width, int height);
+Canvas flip_horizontal(const Canvas& src);
+Canvas flip_vertical(const Canvas& src);
+Canvas apply_vignette(const Canvas& src, float strength = 0.45f, float power = 1.8f);
+
 } // namespace imglib
 
 #endif // IMGLIB_TRANSFORM_HPP
