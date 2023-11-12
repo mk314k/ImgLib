@@ -84,4 +84,55 @@ Canvas flatten_layer_stack(int width,
   return comp;
 }
 
+Canvas radial_feather_mask(int width,
+                           int height,
+                           float center_x,
+                           float center_y,
+                           float inner_radius,
+                           float outer_radius) {
+  Canvas mask(width, height, 1, 0.0f);
+  const float r_in = std::max(0.0f, inner_radius);
+  const float r_out = std::max(r_in + 1e-4f, outer_radius);
+
+  for (int y = 0; y < height; ++y) {
+    for (int x = 0; x < width; ++x) {
+      const float dx = static_cast<float>(x) - center_x;
+      const float dy = static_cast<float>(y) - center_y;
+      const float dist = std::sqrt(dx * dx + dy * dy);
+      if (dist <= r_in) {
+        mask.at(x, y, 0) = 1.0f;
+      } else if (dist < r_out) {
+        const float t = (dist - r_in) / (r_out - r_in);
+        mask.at(x, y, 0) = 1.0f - t * t * (3.0f - 2.0f * t);
+      } else {
+        mask.at(x, y, 0) = 0.0f;
+      }
+    }
+  }
+  return mask;
+}
+
+Canvas masked_blend(const Canvas& base,
+                    const Canvas& top,
+                    const Canvas& mask,
+                    BlendMode mode) {
+  ensure_same_shape(base, top);
+  if (mask.width() != base.width() || mask.height() != base.height()) {
+    throw std::invalid_argument("masked_blend mask dimensions must match base");
+  }
+  Canvas out(base.width(), base.height(), base.channels());
+
+  for (int y = 0; y < base.height(); ++y) {
+    for (int x = 0; x < base.width(); ++x) {
+      const float m = std::max(0.0f, std::min(1.0f, mask.at(x, y, 0)));
+      for (int c = 0; c < base.channels(); ++c) {
+        const float b_val = base.at(x, y, c);
+        const float mixed = blend_channel(b_val, top.at(x, y, c), mode);
+        out.at(x, y, c) = (1.0f - m) * b_val + m * mixed;
+      }
+    }
+  }
+  return out;
+}
+
 } // namespace imglib

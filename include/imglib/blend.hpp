@@ -39,6 +39,18 @@ Canvas flatten_layer_stack(int width,
                            float bg_g = 0.0f,
                            float bg_b = 0.0f);
 
+Canvas radial_feather_mask(int width,
+                           int height,
+                           float center_x,
+                           float center_y,
+                           float inner_radius,
+                           float outer_radius);
+
+Canvas masked_blend(const Canvas& base,
+                    const Canvas& top,
+                    const Canvas& mask,
+                    BlendMode mode = BlendMode::Normal);
+
 } // namespace imglib
 
 #endif // IMGLIB_BLEND_HPP
