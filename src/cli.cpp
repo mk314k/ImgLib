@@ -31,7 +31,12 @@ void print_usage() {
       << "  bilateral <in.png> <out.png> [sigma_spatial=2.5]\n"
       << "  resize    <in.png> <out.png> [scale=2.0]\n"
       << "  rotate    <in.png> <out.png> [angle_rad=0.52]\n"
-      << "  stylize   <in.png> <out.png> [strokes=4000]\n";
+      << "  stylize   <in.png> <out.png> [strokes=4000]\n"
+      << "  equalize  <in.png> <out.png>\n"
+      << "  hue       <in.png> <out.png> [delta_deg=30.0]\n"
+      << "  canny     <in.png> <out.png> [sigma=1.2]\n"
+      << "  median    <in.png> <out.png> [radius=1]\n"
+      << "  vignette  <in.png> <out.png> [strength=0.45]\n";
 }
 
 } // namespace
@@ -69,6 +74,17 @@ int main(int argc, char** argv) {
     } else if (cmd == "stylize") {
       const int strokes = (param > 0.0f) ? static_cast<int>(param) : 4000;
       result = imglib::oriented_painterly_render(src, make_disc_brush(15), strokes, 24);
+    } else if (cmd == "equalize") {
+      result = imglib::equalize_histogram(src);
+    } else if (cmd == "hue") {
+      result = imglib::shift_hsl(src, (param > 0.0f) ? param : 30.0f);
+    } else if (cmd == "canny") {
+      result = imglib::canny_edges(src, (param > 0.0f) ? param : 1.2f);
+    } else if (cmd == "median") {
+      const int rad = (param > 0.0f) ? static_cast<int>(param) : 1;
+      result = imglib::median_filter(src, rad);
+    } else if (cmd == "vignette") {
+      result = imglib::apply_vignette(src, (param > 0.0f) ? param : 0.45f);
     } else {
       print_usage();
       return 1;

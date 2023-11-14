@@ -14,6 +14,8 @@ LIB_SOURCES = \
 	src/filter.cpp \
 	src/warp.cpp \
 	src/stylize.cpp \
+	src/blend.cpp \
+	src/retouch.cpp \
 	third_party/lodepng.cpp
 
 LIB_OBJECTS = $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(LIB_SOURCES))
